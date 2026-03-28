@@ -8,6 +8,14 @@ import './App.css'
 
 const DIRECTION_STORAGE = 'wagwan-voice-direction'
 
+// Fake visitor count that increases
+const getVisitorCount = () => {
+  const base = 1337420
+  const now = Date.now()
+  const hoursSinceEpoch = Math.floor(now / (1000 * 60 * 60))
+  return base + (hoursSinceEpoch % 9999)
+}
+
 export default function App() {
   const {
     isRecording,
@@ -23,6 +31,7 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [requestError, setRequestError] = useState(null)
   const [audioUrl, setAudioUrl] = useState(null)
+  const [visitorCount] = useState(getVisitorCount)
 
   const audioRef = useRef(null)
   const prevUrlRef = useRef(null)
@@ -100,85 +109,139 @@ export default function App() {
   const micDisabled = !supported || loading
 
   return (
-    <div className="app">
-      <header className="header">
-        <h1 className="title">WagwanTranslator</h1>
-        <p className="subtitle">
-          Record speech → backend (Cohere transcribe → style → TTS in{' '}
-          <code>server/cohere_pipeline.py</code>) → audio plays here.
-        </p>
-      </header>
-
-      <section className="direction" aria-label="Translation direction">
-        <button
-          type="button"
-          className={direction === 'oxford-to-toronto' ? 'chip active' : 'chip'}
-          onClick={() => setDirection('oxford-to-toronto')}
-        >
-          Oxford → Toronto
-        </button>
-        <button
-          type="button"
-          className={direction === 'toronto-to-oxford' ? 'chip active' : 'chip'}
-          onClick={() => setDirection('toronto-to-oxford')}
-        >
-          Toronto → Oxford
-        </button>
-      </section>
-
-      <div className="mic-wrap">
-        <button
-          type="button"
-          className={`mic ${isRecording ? 'recording' : ''}`}
-          onClick={onMicClick}
-          disabled={micDisabled}
-          aria-busy={loading}
-          aria-pressed={isRecording}
-          aria-label={isRecording ? 'Stop and send' : 'Start recording'}
-        >
-          <span className="mic-icon-wrap" aria-hidden>
-            {loading ? (
-              <Loader2 className="mic-icon mic-icon--spin" size={28} strokeWidth={2} />
-            ) : isRecording ? (
-              <Square className="mic-icon mic-icon--stop" size={22} fill="currentColor" strokeWidth={0} />
-            ) : (
-              <Mic className="mic-icon" size={28} strokeWidth={2} />
-            )}
-          </span>
-        </button>
-        <p className="mic-hint">
-          {!supported
-            ? 'Microphone API not available'
-            : loading
-              ? 'Processing…'
-              : isRecording
-                ? 'Tap to stop & send'
-                : direction === 'oxford-to-toronto'
-                  ? 'Speak Oxford English'
-                  : 'Speak Toronto style'}
-        </p>
+    <>
+      {/* Marquee Banner */}
+      <div className="marquee-container">
+        <span className="marquee-text">
+          *** WELCOME TO WAGWAN TRANSLATOR *** Toronto's #1 Slang Translation Service Since 1999 ***
+          Now with VOICE CLONING technology!!! *** Powered by Cohere AI & Mistral ***
+          You are visitor #{visitorCount}!!! *** BOOKMARK THIS PAGE!!! ***
+        </span>
       </div>
 
-      {error ? <p className="error">{error}</p> : null}
-
-      <section className="panel output-panel">
-        <div className="panel-head">
-          <h2>
-            <Volume2 className="panel-icon" size={14} strokeWidth={2} aria-hidden />
-            Output audio
-          </h2>
-        </div>
-        {audioUrl ? (
-          <audio ref={audioRef} className="audio-out" controls src={audioUrl}>
-            <a href={audioUrl}>Download audio</a>
-          </audio>
-        ) : (
-          <p className="placeholder">
-            After you stop recording, translated speech plays here (stub WAV until TTS is wired).
+      <div className="app">
+        <header className="header">
+          <div className="header-images">
+            <img src="/cn-tower-clipart.webp" alt="CN Tower" className="cn-tower" />
+            <span className="maple-leaf" role="img" aria-label="maple leaf">🍁</span>
+            <span style={{ fontSize: '4rem' }}>🏙️</span>
+            <span className="maple-leaf" role="img" aria-label="maple leaf">🍁</span>
+            <img src="/cn-tower-clipart.webp" alt="CN Tower" className="cn-tower" />
+          </div>
+          <h1 className="title">WagwanTranslator</h1>
+          <p className="subtitle">
+            <span className="blink">***</span> Toronto Slang ↔ Oxford English <span className="blink">***</span>
           </p>
-        )}
-      </section>
-    </div>
+          <p className="subtitle">
+            <span className="fire-emoji">🔥</span> Voice Cloning Technology <span className="fire-emoji">🔥</span>
+          </p>
+        </header>
+
+        <div className="raptors-section">
+          <img src="/drake.webp" alt="Started from the bottom" className="drake-img" />
+          <div className="raptors-row">
+            <span style={{ fontSize: '2rem' }}>🦖</span>
+            <span className="raptors-text"> WE THE NORTH </span>
+            <span style={{ fontSize: '2rem' }}>🦖</span>
+          </div>
+        </div>
+
+        <section className="direction" aria-label="Translation direction">
+          <button
+            type="button"
+            className={direction === 'oxford-to-toronto' ? 'chip active' : 'chip'}
+            onClick={() => setDirection('oxford-to-toronto')}
+          >
+            🎩 Oxford → Toronto 🍁
+          </button>
+          <button
+            type="button"
+            className={direction === 'toronto-to-oxford' ? 'chip active' : 'chip'}
+            onClick={() => setDirection('toronto-to-oxford')}
+          >
+            🍁 Toronto → Oxford 🎩
+          </button>
+        </section>
+
+        <div className="mic-wrap">
+          <button
+            type="button"
+            className={`mic ${isRecording ? 'recording' : ''}`}
+            onClick={onMicClick}
+            disabled={micDisabled}
+            aria-busy={loading}
+            aria-pressed={isRecording}
+            aria-label={isRecording ? 'Stop and send' : 'Start recording'}
+          >
+            <span className="mic-icon-wrap" aria-hidden>
+              {loading ? (
+                <Loader2 className="mic-icon mic-icon--spin" size={36} strokeWidth={2} />
+              ) : isRecording ? (
+                <Square className="mic-icon mic-icon--stop" size={28} fill="currentColor" strokeWidth={0} />
+              ) : (
+                <Mic className="mic-icon" size={36} strokeWidth={2} />
+              )}
+            </span>
+          </button>
+          <p className="mic-hint">
+            {!supported
+              ? '❌ Microphone not available'
+              : loading
+                ? '⏳ Processing... please wait fam'
+                : isRecording
+                  ? '🔴 Recording... tap to stop & send!'
+                  : direction === 'oxford-to-toronto'
+                    ? '🎤 Click to speak proper English, innit'
+                    : '🎤 Click to speak Toronto ting, styll'}
+          </p>
+        </div>
+
+        {error ? <p className="error">⚠️ ERROR: {error}</p> : null}
+
+        <section className="panel output-panel">
+          <div className="panel-head">
+            <h2>
+              <Volume2 className="panel-icon" size={16} strokeWidth={2} aria-hidden />
+              🔊 Output Audio
+            </h2>
+          </div>
+          {audioUrl ? (
+            <audio ref={audioRef} className="audio-out" controls src={audioUrl}>
+              <a href={audioUrl}>Download audio</a>
+            </audio>
+          ) : (
+            <p className="placeholder">
+              🎧 Your translated audio will appear here, say less!
+            </p>
+          )}
+        </section>
+
+        <footer className="footer">
+          <img
+            className="construction-gif"
+            src="https://web.archive.org/web/20090830082356/http://geocities.com/SoHo/7373/construction.gif"
+            alt="Under Construction"
+          />
+          <p style={{ color: '#FFFF00', margin: '0.5rem 0' }}>
+            🚧 Site Under Construction 🚧
+          </p>
+          <div className="visitor-counter">
+            VISITORS: {visitorCount.toLocaleString()}
+          </div>
+          <div className="footer-links">
+            <span style={{ color: '#FF00FF' }}>
+              Best viewed with Netscape Navigator 4.0
+            </span>
+          </div>
+          <p style={{ fontSize: '0.8rem', color: '#00FFFF', marginTop: '0.5rem' }}>
+            © 1999-2026 WagwanTranslator Inc. | Made with ❤️ in the 6ix
+          </p>
+          <p style={{ fontSize: '0.7rem', color: '#808080' }}>
+            Powered by Cohere AI & Mistral | No cap, this site is blessed fam 🙏
+          </p>
+        </footer>
+      </div>
+    </>
   )
 }
 
@@ -189,5 +252,5 @@ function readDirection() {
   } catch {
     /* ignore */
   }
-  return 'oxford-to-toronto'
+  return 'toronto-to-oxford'
 }
