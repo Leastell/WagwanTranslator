@@ -14,15 +14,40 @@ from __future__ import annotations
 import base64
 import io
 import os
+from pathlib import Path
 from typing import Literal
 
 import httpx
-import soundfile as sf
 
 Direction = Literal["oxford-to-toronto", "toronto-to-oxford"]
 
-COHERE_API_KEY = os.environ.get("COHERE_API_KEY", "")
-MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY", "")
+_ENV_LOADED = False
+
+
+def _load_server_env_once() -> None:
+    """Load server/.env even if this module was imported before main.py ran load_dotenv."""
+    global _ENV_LOADED
+    if _ENV_LOADED:
+        return
+    try:
+        from dotenv import load_dotenv
+
+        p = Path(__file__).resolve().parent / ".env"
+        if p.is_file():
+            load_dotenv(p)
+    except ImportError:
+        pass
+    _ENV_LOADED = True
+
+
+def _cohere_key() -> str:
+    _load_server_env_once()
+    return (os.environ.get("COHERE_API_KEY") or "").strip()
+
+
+def _mistral_key() -> str:
+    _load_server_env_once()
+    return (os.environ.get("MISTRAL_API_KEY") or "").strip()
 
 
 def _convert_to_wav(audio: bytes, content_type: str | None) -> bytes:
@@ -61,12 +86,13 @@ def cohere_transcribe(audio: bytes, content_type: str | None) -> str:
     if not audio:
         return ""
 
-    if not COHERE_API_KEY:
+    key = _cohere_key()
+    if not key:
         raise ValueError("COHERE_API_KEY environment variable not set")
 
     response = httpx.post(
         "https://api.cohere.com/v2/audio/transcriptions",
-        headers={"Authorization": f"Bearer {COHERE_API_KEY}"},
+        headers={"Authorization": f"Bearer {key}"},
         files={"file": ("audio.wav", audio, "audio/wav")},
         data={"model": "cohere-transcribe-03-2026", "language": "en"},
         timeout=60.0,
@@ -82,7 +108,8 @@ def cohere_translate_style(text: str, direction: Direction) -> str:
     if not text.strip():
         return ""
 
-    if not COHERE_API_KEY:
+    key = _cohere_key()
+    if not key:
         raise ValueError("COHERE_API_KEY environment variable not set")
 
     if direction == "toronto-to-oxford":
@@ -140,7 +167,7 @@ Text to translate: {text}"""
     response = httpx.post(
         "https://api.cohere.com/v2/chat",
         headers={
-            "Authorization": f"Bearer {COHERE_API_KEY}",
+            "Authorization": f"Bearer {key}",
             "Content-Type": "application/json",
         },
         json={
@@ -168,7 +195,8 @@ def cohere_text_to_speech(
     if not text.strip():
         return _stub_silence_wav(), "audio/wav"
 
-    if not MISTRAL_API_KEY:
+    mkey = _mistral_key()
+    if not mkey:
         raise ValueError("MISTRAL_API_KEY environment variable not set")
 
     _ = direction  # Could use different voices per direction in future
@@ -186,7 +214,7 @@ def cohere_text_to_speech(
     response = httpx.post(
         "https://api.mistral.ai/v1/audio/speech",
         headers={
-            "Authorization": f"Bearer {MISTRAL_API_KEY}",
+            "Authorization": f"Bearer {mkey}",
             "Content-Type": "application/json",
         },
         json=payload,

@@ -57,9 +57,58 @@
   margin-bottom: 1.25rem;
 }
 
+.mic-row {
+  --control-size: 5.5rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.upload-btn {
+  width: var(--control-size);
+  height: var(--control-size);
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 3px solid #3a3a46;
+  background: linear-gradient(160deg, #22222a, #18181e);
+  color: #e8e8f0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+}
+
+.upload-btn:hover:not(:disabled) {
+  border-color: #4a4a58;
+}
+
+.upload-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.upload-icon {
+  display: block;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .mic {
-  width: 5.5rem;
-  height: 5.5rem;
+  width: var(--control-size, 5.5rem);
+  height: var(--control-size, 5.5rem);
   border-radius: 50%;
   border: 3px solid #3a3a46;
   background: linear-gradient(160deg, #25252e, #1a1a20);

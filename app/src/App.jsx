@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { Loader2, Mic, Square, Volume2 } from 'lucide-react'
+import { Loader2, Mic, Square, Upload, Volume2 } from 'lucide-react'
 import { translateVoice } from './lib/api.js'
 import { useAudioRecorder } from './lib/useAudioRecorder.js'
 import './App.css'
@@ -26,6 +26,7 @@ export default function App() {
 
   const audioRef = useRef(null)
   const prevUrlRef = useRef(null)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     try {
@@ -56,23 +57,17 @@ export default function App() {
 
   const error = recorderError || requestError
 
-  const onMicClick = useCallback(async () => {
-    setRequestError(null)
-    setError(null)
-
-    if (isRecording) {
+  const runPipeline = useCallback(
+    async (blob, filename) => {
+      setRequestError(null)
+      setError(null)
+      if (!blob || blob.size === 0) {
+        setRequestError('No audio to send.')
+        return
+      }
       setLoading(true)
       try {
-        const blob = await stopRecording()
-        if (!blob || blob.size === 0) {
-          setRequestError('No audio captured. Try again.')
-          return
-        }
-        const outBlob = await translateVoice(
-          blob,
-          direction,
-          `recording.${extensionForBlob(blob)}`,
-        )
+        const outBlob = await translateVoice(blob, direction, filename)
         if (prevUrlRef.current) {
           URL.revokeObjectURL(prevUrlRef.current)
         }
@@ -84,6 +79,21 @@ export default function App() {
       } finally {
         setLoading(false)
       }
+    },
+    [direction, setError],
+  )
+
+  const onMicClick = useCallback(async () => {
+    setRequestError(null)
+    setError(null)
+
+    if (isRecording) {
+      const blob = await stopRecording()
+      if (!blob || blob.size === 0) {
+        setRequestError('No audio captured. Try again.')
+        return
+      }
+      await runPipeline(blob, `recording.${extensionForBlob(blob)}`)
       return
     }
 
@@ -94,10 +104,21 @@ export default function App() {
     stopRecording,
     setError,
     extensionForBlob,
-    direction,
+    runPipeline,
   ])
 
+  const onFileSelected = useCallback(
+    async (e) => {
+      const file = e.target.files?.[0]
+      e.target.value = ''
+      if (!file) return
+      await runPipeline(file, file.name || 'audio.webm')
+    },
+    [runPipeline],
+  )
+
   const micDisabled = !supported || loading
+  const uploadDisabled = loading || isRecording
 
   return (
     <div className="app">
@@ -127,25 +148,45 @@ export default function App() {
       </section>
 
       <div className="mic-wrap">
-        <button
-          type="button"
-          className={`mic ${isRecording ? 'recording' : ''}`}
-          onClick={onMicClick}
-          disabled={micDisabled}
-          aria-busy={loading}
-          aria-pressed={isRecording}
-          aria-label={isRecording ? 'Stop and send' : 'Start recording'}
-        >
-          <span className="mic-icon-wrap" aria-hidden>
-            {loading ? (
-              <Loader2 className="mic-icon mic-icon--spin" size={28} strokeWidth={2} />
-            ) : isRecording ? (
-              <Square className="mic-icon mic-icon--stop" size={22} fill="currentColor" strokeWidth={0} />
-            ) : (
-              <Mic className="mic-icon" size={28} strokeWidth={2} />
-            )}
-          </span>
-        </button>
+        <div className="mic-row">
+          <button
+            type="button"
+            className={`mic ${isRecording ? 'recording' : ''}`}
+            onClick={onMicClick}
+            disabled={micDisabled}
+            aria-busy={loading}
+            aria-pressed={isRecording}
+            aria-label={isRecording ? 'Stop and send' : 'Start recording'}
+          >
+            <span className="mic-icon-wrap" aria-hidden>
+              {loading ? (
+                <Loader2 className="mic-icon mic-icon--spin" size={28} strokeWidth={2} />
+              ) : isRecording ? (
+                <Square className="mic-icon mic-icon--stop" size={22} fill="currentColor" strokeWidth={0} />
+              ) : (
+                <Mic className="mic-icon" size={28} strokeWidth={2} />
+              )}
+            </span>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="sr-only"
+            accept="audio/*,.webm,.wav,.mp3,.ogg,.m4a,audio/webm,audio/wav"
+            aria-label="Upload audio file"
+            onChange={onFileSelected}
+          />
+          <button
+            type="button"
+            className="upload-btn"
+            disabled={uploadDisabled}
+            onClick={() => fileInputRef.current?.click()}
+            aria-label="Upload audio file"
+            title="Upload audio file"
+          >
+            <Upload className="upload-icon" size={28} strokeWidth={2} aria-hidden />
+          </button>
+        </div>
         <p className="mic-hint">
           {!supported
             ? 'Microphone API not available'
@@ -154,8 +195,8 @@ export default function App() {
               : isRecording
                 ? 'Tap to stop & send'
                 : direction === 'oxford-to-toronto'
-                  ? 'Speak Oxford English'
-                  : 'Speak Toronto style'}
+                  ? 'Speak Oxford English or upload a file'
+                  : 'Speak Toronto style or upload a file'}
         </p>
       </div>
 
