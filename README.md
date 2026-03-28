@@ -63,22 +63,22 @@ Open **`http://localhost:5173`**. Vite proxies **`/api/*`** → **`http://127.0.
 
 ### Where to hack
 
-| Location | Purpose |
-|----------|--------|
-| `server/cohere_pipeline.py` | **`cohere_transcribe`**, **`cohere_translate_style`**, **`cohere_text_to_speech`**, **`run_voice_pipeline`** |
-| `server/main.py` | **`POST /translate/voice`** — form fields **`audio`**, **`direction`**, **`voice_id`** (default `drake`) |
-| `server/voice_refs/` | **`{voice_id}.wav`** or **`.mp3`** — Mistral clone ref (MP3 is converted server-side; not the mic upload) |
-| `app/src/voices.json` | Sidebar clones: **`id`** → **`displayName`**, **`type`** (`toronto` \| `lad`); assets = `avatars/{id}.png` + `voice_refs/{id}.mp3` |
-| `app/src/lib/api.js` | `translateVoice(blob, direction, filename, voiceId)` → `Blob` |
-| `app/src/lib/useAudioRecorder.js` | Tap record / stop |
-| `app/src/App.jsx` | Direction chips + `<audio controls>` |
+| Location                          | Purpose                                                                                                                            |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `server/cohere_pipeline.py`       | **`cohere_transcribe`**, **`cohere_translate_style`**, **`cohere_text_to_speech`**, **`run_voice_pipeline`**                       |
+| `server/main.py`                  | **`POST /translate/voice`** — form fields **`audio`**, **`direction`**, **`voice_id`** (default `drake`)                           |
+| `server/voice_refs/`              | **`{voice_id}.wav`** or **`.mp3`** — Mistral clone ref (MP3 is converted server-side; not the mic upload)                          |
+| `app/src/voices.json`             | Sidebar clones: **`id`** → **`displayName`**, **`type`** (`toronto` \| `lad`); assets = `avatars/{id}.png` + `voice_refs/{id}.mp3` |
+| `app/src/lib/api.js`              | `translateVoice(blob, direction, filename, voiceId)` → `Blob`                                                                      |
+| `app/src/lib/useAudioRecorder.js` | Tap record / stop                                                                                                                  |
+| `app/src/App.jsx`                 | Direction chips + `<audio controls>`                                                                                               |
 
 ### Phone or Android emulator
 
 **`adb reverse tcp:5173 tcp:5173`** forwards the device’s **`localhost:5173`** to **port 5173 on your computer** (so “localhost” on the phone hits your Vite server). With the default **`/api` proxy**, you only need **5173** reversed—not 8000—unless you set **`VITE_API_ROOT`** to a URL on the device’s own `localhost`.
 
 - **Emulator:** start API + `npm run dev`, then `adb reverse tcp:5173 tcp:5173`, open **`http://localhost:5173`** in Chrome, allow mic.
-- **Physical phone, fastest:** same Wi‑Fi as your laptop → in the phone browser open **`http://<your-laptop-LAN-IP>:5173`** (firewall must allow 5173).  
+- **Physical phone, fastest:** same Wi‑Fi as your laptop → in the phone browser open **`http://<your-laptop-LAN-IP>:5173`** (firewall must allow 5173).
 - **Physical phone + USB:** enable USB debugging, `adb reverse tcp:5173 tcp:5173`, then **`http://localhost:5173`** on the phone.
 
 ### Production-ish build
