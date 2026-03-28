@@ -2,6 +2,12 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { Loader2, Mic, Square, Volume2 } from "lucide-react";
 import { translateVoice } from "./lib/api.js";
 import { useAudioRecorder } from "./lib/useAudioRecorder.js";
+import {
+    avatarUrlForVoice,
+    getDefaultVoiceId,
+    isValidVoiceId,
+    listVoicesByType,
+} from "./voices.js";
 import "./App.css";
 
 /** @typedef {'oxford-to-toronto' | 'toronto-to-oxford'} VoiceDirection */
@@ -9,8 +15,8 @@ import "./App.css";
 const DIRECTION_STORAGE = "wagwan-voice-direction";
 const VOICE_ID_STORAGE = "wagwan-voice-id";
 
-/** Sidebar thumbs live in `app/public/avatars/` (served as `/images/...`). */
-const DRAKE_VOICE_THUMB = "/avatars/drake.png";
+const TORONTO_VOICES = listVoicesByType("toronto");
+const LAD_VOICES = listVoicesByType("lad");
 
 // Fake visitor count that increases
 const getVisitorCount = () => {
@@ -149,30 +155,25 @@ export default function App() {
                         <p className="sidebar-blurb">
                             TTS clones this voice (not your mic)
                         </p>
-                        <article
-                            className={
-                                voiceId === "drake"
-                                    ? "voice-card voice-card--selected"
-                                    : "voice-card"
-                            }
-                        >
-                            <VoiceThumbDrake />
-                            <p className="voice-name">Drake</p>
-                            <button
-                                type="button"
-                                className={
-                                    voiceId === "drake"
-                                        ? "voice-pick-btn voice-pick-btn--on"
-                                        : "voice-pick-btn"
-                                }
-                                onClick={() => setVoiceId("drake")}
-                                title="Uses server/voice_refs/drake.wav or drake.mp3 for Mistral"
-                            >
-                                {voiceId === "drake"
-                                    ? "✓ CLONE ACTIVE"
-                                    : "SELECT VOICE"}
-                            </button>
-                        </article>
+                        <div className="sidebar-voices">
+                            {TORONTO_VOICES.length === 0 ? (
+                                <div className="voice-empty" aria-hidden>
+                                    <p className="voice-empty__line1">[ EMPTY ]</p>
+                                    <p className="voice-empty__line2">
+                                        add voices.json + avatars!!!
+                                    </p>
+                                </div>
+                            ) : (
+                                TORONTO_VOICES.map((v) => (
+                                    <VoiceCard
+                                        key={v.id}
+                                        voice={v}
+                                        selected={voiceId === v.id}
+                                        onSelect={() => setVoiceId(v.id)}
+                                    />
+                                ))
+                            )}
+                        </div>
                     </div>
                 </aside>
 
@@ -382,12 +383,27 @@ export default function App() {
                             Proper Lads{" "}
                             <span className="sidebar-heading__star">☆</span>
                         </h3>
-                        <p className="sidebar-blurb">BBC energy coming soon</p>
-                        <div className="voice-empty" aria-hidden>
-                            <p className="voice-empty__line1">[ EMPTY ]</p>
-                            <p className="voice-empty__line2">
-                                nothing here yet!!!
-                            </p>
+                        <p className="sidebar-blurb">
+                            Oxford trim — pick a lad
+                        </p>
+                        <div className="sidebar-voices">
+                            {LAD_VOICES.length === 0 ? (
+                                <div className="voice-empty" aria-hidden>
+                                    <p className="voice-empty__line1">[ EMPTY ]</p>
+                                    <p className="voice-empty__line2">
+                                        add a voice in voices.json!!!
+                                    </p>
+                                </div>
+                            ) : (
+                                LAD_VOICES.map((v) => (
+                                    <VoiceCard
+                                        key={v.id}
+                                        voice={v}
+                                        selected={voiceId === v.id}
+                                        onSelect={() => setVoiceId(v.id)}
+                                    />
+                                ))
+                            )}
                         </div>
                     </div>
                 </aside>
@@ -396,14 +412,48 @@ export default function App() {
     );
 }
 
-function VoiceThumbDrake() {
+/**
+ * @param {{ id: string, displayName: string, type: string, image?: string }} voice
+ * @param {boolean} selected
+ * @param {() => void} onSelect
+ */
+function VoiceCard({ voice, selected, onSelect }) {
+    const { id, displayName } = voice;
+    const title = `Clone ref: server/voice_refs/${id}.wav or ${id}.mp3`;
+    return (
+        <article
+            className={
+                selected ? "voice-card voice-card--selected" : "voice-card"
+            }
+        >
+            <VoiceThumb id={id} displayName={displayName} image={voice.image} />
+            <p className="voice-name">{displayName}</p>
+            <button
+                type="button"
+                className={
+                    selected ? "voice-pick-btn voice-pick-btn--on" : "voice-pick-btn"
+                }
+                onClick={onSelect}
+                title={title}
+            >
+                {selected ? "✓ CLONE ACTIVE" : "SELECT VOICE"}
+            </button>
+        </article>
+    );
+}
+
+/**
+ * @param {{ id: string, displayName: string, image?: string }} props
+ */
+function VoiceThumb({ id, displayName, image }) {
     const [failed, setFailed] = useState(false);
+    const src = avatarUrlForVoice(id, { image });
 
     if (failed) {
         return (
             <div className="voice-thumb voice-thumb--placeholder" aria-hidden>
                 <span className="voice-thumb__glyph">?</span>
-                <span className="voice-thumb__hint">add drake.png</span>
+                <span className="voice-thumb__hint">add {id}.png</span>
             </div>
         );
     }
@@ -411,7 +461,7 @@ function VoiceThumbDrake() {
     return (
         <img
             className="voice-thumb voice-thumb--photo"
-            src={DRAKE_VOICE_THUMB}
+            src={src}
             alt=""
             onError={() => setFailed(true)}
         />
@@ -431,9 +481,9 @@ function readDirection() {
 function readVoiceId() {
     try {
         const v = localStorage.getItem(VOICE_ID_STORAGE);
-        if (v && /^[a-z0-9_-]+$/i.test(v)) return v.toLowerCase();
+        if (v && isValidVoiceId(v)) return v.trim().toLowerCase();
     } catch {
         /* ignore */
     }
-    return "drake";
+    return getDefaultVoiceId();
 }

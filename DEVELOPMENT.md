@@ -49,12 +49,32 @@ WagwanTranslator/
     └── src/
         ├── App.jsx              # Direction + mic + <audio>
         ├── App.css
+        ├── voices.json          # ⭐ Voice clone UI: id → displayName, type (toronto | lad)
+        ├── voices.js            # Helpers + manifest validation (console)
         └── lib/
             ├── api.js
             └── useAudioRecorder.js
 ```
 
 **Build output:** `app/dist/` after `npm run build`.
+
+### Voice clones (`voices.json`)
+
+Each **key** is the **`voice_id`** sent to the API and the **basename** for assets:
+
+| Key | File on disk |
+|-----|----------------|
+| `nick` | `server/voice_refs/nick.wav` or `nick.mp3` |
+| `nick` | `app/public/avatars/nick.png` (thumb in the sidebar) |
+
+Each entry:
+
+- **`displayName`** — label in the UI (e.g. `"Nick Frosst"`).
+- **`type`** — **`toronto`** → left sidebar (Torontonians); **`lad`** → right sidebar (Proper Lads).
+
+Optional per entry: **`image`** — override avatar path (`/avatars/custom.png` or `custom.png` under `public/avatars/`).
+
+Top-level **`defaultVoiceId`** — which clone is selected when nothing is stored (must match a key). If missing or invalid, the first `toronto` voice is used.
 
 ---
 

@@ -1,0 +1,13 @@
+{
+    "defaultVoiceId": "drake",
+    "voices": {
+        "drake": {
+            "displayName": "Drake",
+            "type": "toronto"
+        },
+        "nick": {
+            "displayName": "Nick Frosst",
+            "type": "lad"
+        }
+    }
+}

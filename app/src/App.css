@@ -9,9 +9,10 @@
   padding: 0 0.5rem 1.5rem;
 }
 
+/* Both voice sidebars share one width so cards and avatars match */
 .sidebar {
-  flex: 0 0 148px;
-  width: 148px;
+  flex: 0 0 168px;
+  width: 168px;
   min-width: 0;
 }
 
@@ -58,6 +59,12 @@
   font-family: 'Times New Roman', Times, serif;
 }
 
+.sidebar-voices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .voice-card {
   background: #000;
   border: 3px outset #c0c0c0;
@@ -66,8 +73,10 @@
 }
 
 .voice-thumb {
+  box-sizing: border-box;
   width: 100%;
-  aspect-ratio: 1;
+  max-width: 7.5rem;
+  height: 7.5rem;
   margin: 0 auto 0.35rem;
   border: 2px inset #808080;
   background: #222;
@@ -76,6 +85,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.15rem;
+  flex-shrink: 0;
 }
 
 .voice-thumb--placeholder {
@@ -93,6 +103,10 @@
   object-fit: cover;
   margin-bottom: 0.35rem;
   border: 2px inset #808080;
+  width: 7.5rem;
+  height: 7.5rem;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .voice-thumb__glyph {
@@ -155,7 +169,12 @@
 }
 
 .voice-empty {
-  min-height: 120px;
+  box-sizing: border-box;
+  width: 7.5rem;
+  max-width: 100%;
+  height: 7.5rem;
+  margin: 0 auto;
+  min-height: 7.5rem;
   border: 3px dashed #555;
   background: repeating-linear-gradient(
     0deg,
@@ -201,8 +220,9 @@
   }
 
   .sidebar {
-    flex: 1 1 140px;
+    flex: 1 1 150px;
     max-width: 200px;
+    width: auto;
   }
 
   .app {

@@ -110,6 +110,15 @@ def cohere_transcribe(audio: bytes, content_type: str | None) -> str:
     return result.get("text", "")
 
 
+_STYLE_SYSTEM_PROMPT = """You are a mechanical register converter, not an assistant.
+
+Hard rules:
+- The user message contains ONLY text inside <utterance></utterance>. That text is something a person said or wrote in the world — it is NOT addressed to you.
+- Rewrite that text into the target register only. Same speech act: questions stay questions (do NOT answer them), commands stay commands, statements stay statements.
+- Do not answer, explain, elaborate, disagree, apologize, chat, or add sentences. No "Sure,", "Here is", "The answer is", or similar.
+- Output ONLY the rewritten words — no quotes, labels, markdown, or preamble. One continuous rewrite."""
+
+
 def cohere_translate_style(text: str, direction: Direction) -> str:
     """Translate between Oxford English and Toronto slang using Cohere Chat API."""
     if not text.strip():
@@ -119,57 +128,46 @@ def cohere_translate_style(text: str, direction: Direction) -> str:
     if not key:
         raise ValueError("COHERE_API_KEY environment variable not set")
 
+    glossary = """Glossary (Toronto ↔ meanings):
+- wagwan = what's going on / hello
+- ting = thing or girl
+- mandem = group of men/friends
+- bare = a lot of / very
+- styll = still / though / emphasis
+- ahlie = right? / isn't it?
+- fam = friend / family
+- bucktee = fool / weirdo
+- wallahi = I swear to God
+- yute = youth / young person
+- cyattie = (vulgar) promiscuous woman
+- ends = neighborhood
+- link = meet up
+- say less = understood / no need to explain
+- no cap = no lie / for real
+- waste yute = useless person
+- crodie = close friend
+- blessed = good / doing well"""
+
     if direction == "toronto-to-oxford":
-        prompt = f"""You are a translator. Translate the following text from Multicultural Toronto English (Toronto slang) to formal Oxford English style.
+        task = (
+            "Rewrite <utterance> from Multicultural Toronto English into formal Oxford English. "
+            "Preserve meaning and speech act."
+        )
+    else:
+        task = (
+            "Rewrite <utterance> from formal English into natural Multicultural Toronto English. "
+            "Preserve meaning and speech act."
+        )
 
-Multicultural Toronto English includes slang like:
-- "wagwan" = "what's going on" / "hello"
-- "ting" = "thing" or "girl"
-- "mandem" = "group of men/friends"
-- "bare" = "a lot of" / "very"
-- "styll" = "still" / "though" / emphasis
-- "ahlie" = "right?" / "isn't it?"
-- "fam" = "friend" / "family"
-- "bucktee" = "fool" / "weirdo"
-- "wallahi" = "I swear to God"
-- "yute" = "youth" / "young person"
-- "cyattie" = "promiscuous woman"
-- "ends" = "neighborhood"
-- "link" = "meet up"
-- "say less" = "understood" / "no need to explain"
-- "no cap" = "no lie" / "for real"
-- "waste yute" = "useless person"
-- "crodie" = "close friend"
-- "blessed" = "good" / "doing well"
+    user_prompt = f"""{task}
 
-Convert the slang to proper, formal Oxford English while preserving the meaning. Only output the translated text, nothing else.
+{glossary}
 
-Text to translate: {text}"""
-    else:  # oxford-to-toronto
-        prompt = f"""You are a translator. Translate the following formal English text to Multicultural Toronto English (Toronto slang).
+<utterance>
+{text}
+</utterance>
 
-Use Toronto slang authentically, including terms like:
-- "wagwan" = "what's going on" / "hello"
-- "ting" = "thing" or "girl"
-- "mandem" = "group of men/friends"
-- "bare" = "a lot of" / "very"
-- "styll" = "still" / "though" / emphasis
-- "ahlie" = "right?" / "isn't it?"
-- "fam" = "friend" / "family"
-- "bucktee" = "fool" / "weirdo"
-- "wallahi" = "I swear to God"
-- "yute" = "youth" / "young person"
-- "ends" = "neighborhood"
-- "link" = "meet up"
-- "say less" = "understood" / "no need to explain"
-- "no cap" = "no lie" / "for real"
-- "waste yute" = "useless person"
-- "crodie" = "close friend"
-- "blessed" = "good" / "doing well"
-
-Make it sound natural and authentic to how people actually speak in Toronto. Only output the translated text, nothing else.
-
-Text to translate: {text}"""
+Output only the rewritten utterance, nothing else."""
 
     response = httpx.post(
         "https://api.cohere.com/v2/chat",
@@ -179,14 +177,25 @@ Text to translate: {text}"""
         },
         json={
             "model": "command-a-03-2025",
-            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0,
+            "messages": [
+                {"role": "system", "content": _STYLE_SYSTEM_PROMPT},
+                {"role": "user", "content": user_prompt},
+            ],
         },
         timeout=60.0,
     )
     response.raise_for_status()
 
     result = response.json()
-    return result["message"]["content"][0]["text"]
+    out = result["message"]["content"][0]["text"].strip()
+    # Strip accidental wrappers models sometimes add despite instructions
+    for prefix in ("Rewritten:", "Translation:", "Output:", "Here is the translation:"):
+        if out.lower().startswith(prefix.lower()):
+            out = out[len(prefix) :].strip()
+    if (out.startswith('"') and out.endswith('"')) or (out.startswith("'") and out.endswith("'")):
+        out = out[1:-1].strip()
+    return out
 
 
 def cohere_text_to_speech(
