@@ -23,6 +23,12 @@
   line-height: 1.35;
 }
 
+.mode-pill {
+  margin: 0 0 1rem;
+  font-size: 0.8rem;
+  color: #9b9ba8;
+}
+
 .direction {
   display: flex;
   gap: 0.5rem;
@@ -81,9 +87,30 @@
   box-shadow: 0 0 0 4px rgba(232, 93, 93, 0.25);
 }
 
+.mic-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+
 .mic-icon {
-  font-size: 1.75rem;
-  line-height: 1;
+  display: block;
+  color: currentColor;
+}
+
+.mic-icon--stop {
+  border-radius: 2px;
+}
+
+.mic-icon--spin {
+  animation: mic-spin 0.85s linear infinite;
+}
+
+@keyframes mic-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .mic-hint {

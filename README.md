@@ -30,45 +30,54 @@ _(Exact output depends on how you implement rules, a lexicon, or a model.)_
 
 ---
 
-## App (React) — quick start for engineers
+## App (React + Python API) — quick start for engineers
 
-The UI lives in **`app/`**: Vite + React, **Web Speech API** for mic → text, and a single translation stub **`src/lib/translate.js`** for you to replace.
+**Step-by-step “what do I do now” and file map:** see [`DEVELOPMENT.md`](DEVELOPMENT.md).
+
+Flow today: **record audio in the browser** → **POST multipart file to FastAPI** → JSON `{ "translation": "..." }` shown in the UI. **No browser transcription** — implement **English → Toronto-style text** in **`server/cohere_translate.py`** (Cohere stub included).
 
 ### One-time setup
 
 ```bash
-cd app
+# Backend
+cd server
+python3 -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+# Frontend
+cd ../app
 npm install
 ```
 
-### Run locally (desktop)
+### Run locally (two terminals)
 
 ```bash
-npm run dev
+# Terminal A
+cd server && source .venv/bin/activate && uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
+# Terminal B
+cd app && npm run dev
 ```
 
-Open the printed URL (usually `http://localhost:5173`). Use **Chrome or Edge** — speech recognition is not available in Firefox/Safari for this API.
+Open **`http://localhost:5173`**. Vite proxies **`/api/*`** → **`http://127.0.0.1:8000`**. Mic uses **MediaRecorder** (Chrome, Firefox, Safari, Edge).
 
 ### Where to hack
 
-| File | Purpose |
-|------|--------|
-| `app/src/lib/translate.js` | **Plug:** `(transcript, direction) => string` — rules, API, LLM, etc. |
-| `app/src/lib/useSpeechRecognition.js` | Mic lifecycle, `en-CA` locale — tweak language here if needed |
-| `app/src/App.jsx` | Layout, direction chips, wires transcript → `translateTranscript` |
-
-`direction` is either `from-toronto` (slang → plain) or `to-toronto` (plain → slang); persist in `localStorage` as `wagwan-direction`.
+| Location | Purpose |
+|----------|--------|
+| `server/cohere_translate.py` | **`translate_en_audio_to_toronto`** — plug in Cohere (bytes + `Content-Type` → `str`) |
+| `server/main.py` | HTTP route `POST /translate/en-to-toronto`, field name **`audio`** |
+| `app/src/lib/api.js` | `fetch` + `FormData`; optional **`VITE_API_ROOT`** for direct API URL |
+| `app/src/lib/useAudioRecorder.js` | Tap record / stop, build Blob |
+| `app/src/App.jsx` | UI wiring |
 
 ### Android emulator (same machine as dev server)
 
-The dev server binds **`0.0.0.0:5173`** so other devices can reach your laptop.
+The dev server binds **`0.0.0.0:5173`**. With the default proxy, the phone only talks to port **5173**; keep **8000** running on the host.
 
-1. Start the app: `cd app && npm run dev`.
-2. In a terminal: `adb reverse tcp:5173 tcp:5173` (forwards emulator → your host).
-3. On the emulator, open **Chrome** → `http://localhost:5173`.
-4. Grant **Microphone** when prompted (Settings → App → Chrome → Permissions if needed).
-
-**If `adb reverse` is awkward:** find your computer’s LAN IP (`ipconfig` / `ifconfig`) and open `http://<that-ip>:5173` from the emulator browser (some setups need the firewall to allow port 5173).
+1. Start API + `npm run dev` as above.
+2. `adb reverse tcp:5173 tcp:5173`
+3. Emulator **Chrome** → `http://localhost:5173` — grant mic.
 
 ### Production-ish build
 
@@ -78,7 +87,7 @@ npm run build
 npm run preview
 ```
 
-Serve `app/dist/` from any static host. Speech still requires a **secure context** (HTTPS or localhost).
+`npm run preview` uses the same **`/api` → 8000** proxy. For a static host, point **`VITE_API_ROOT`** at your deployed API (HTTPS) or put a reverse proxy in front.
 
 ### Optional next step: wrap as a real Android app
 
