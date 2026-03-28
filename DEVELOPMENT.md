@@ -42,7 +42,8 @@ WagwanTranslator/
 ├── server/
 │   ├── requirements.txt
 │   ├── main.py                  # POST /translate/voice, GET /health
-│   └── cohere_pipeline.py       # ⭐ Cohere stubs: STT → style → TTS
+│   ├── cohere_pipeline.py       # STT → style → TTS
+│   └── voice_refs/              # ⭐ `{voice_id}.wav` or `.mp3` for Mistral clone (e.g. drake.mp3)
 └── app/
     ├── vite.config.js           # Proxies /api → http://127.0.0.1:8000
     └── src/
@@ -61,9 +62,10 @@ WagwanTranslator/
 
 - **Method / path:** `POST /translate/voice`
 - **Body:** `multipart/form-data`
-  - **`audio`** — file blob from the browser
+  - **`audio`** — file blob from the browser (used for **transcription only**)
   - **`direction`** — `oxford-to-toronto` | `toronto-to-oxford`  
     (**Oxford** = standard English; **Toronto** = Toronto vernacular.)
+  - **`voice_id`** — default `drake`; Mistral **`ref_audio`** is read from **`server/voice_refs/{voice_id}.wav`** or **`.mp3`** (avatar clone clip), not from the upload.
 - **Response:** **binary audio** (e.g. `audio/wav`). Not JSON.
 
 The frontend calls **`/api/translate/voice`** in dev; Vite strips the **`/api`** prefix.

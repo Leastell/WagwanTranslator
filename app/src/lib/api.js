@@ -17,12 +17,19 @@ function voiceUrl() {
  * @param {Blob} audioBlob
  * @param {VoiceDirection} direction
  * @param {string} [filename]
+ * @param {string} [voiceId] — server loads `voice_refs/{voiceId}.wav` or `.mp3` for Mistral clone
  * @returns {Promise<Blob>}
  */
-export async function translateVoice(audioBlob, direction, filename = 'recording.webm') {
+export async function translateVoice(
+  audioBlob,
+  direction,
+  filename = 'recording.webm',
+  voiceId = 'drake',
+) {
   const form = new FormData()
   form.append('audio', audioBlob, filename)
   form.append('direction', direction)
+  form.append('voice_id', voiceId)
 
   const res = await fetch(voiceUrl(), {
     method: 'POST',

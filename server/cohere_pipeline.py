@@ -14,12 +14,16 @@ from __future__ import annotations
 import base64
 import io
 import os
+import re
 from pathlib import Path
 from typing import Literal
 
 import httpx
 
 Direction = Literal["oxford-to-toronto", "toronto-to-oxford"]
+
+# Avatar reference clips: {voice_id}.wav or {voice_id}.mp3 (e.g. drake.mp3). MP3 is converted to WAV for Mistral.
+VOICE_REFS_DIR = Path(__file__).resolve().parent / "voice_refs"
 
 _ENV_LOADED = False
 
@@ -50,21 +54,16 @@ def _mistral_key() -> str:
     return (os.environ.get("MISTRAL_API_KEY") or "").strip()
 
 
-def _convert_to_wav(audio: bytes, content_type: str | None) -> bytes:
-    """Convert audio to WAV format using ffmpeg if needed."""
+def _bytes_to_wav_via_ffmpeg(audio: bytes, input_suffix: str) -> bytes:
+    """Decode arbitrary audio bytes to mono 16 kHz WAV using ffmpeg."""
     import subprocess
     import tempfile
 
-    # If already WAV, return as-is
-    if content_type in ("audio/wav", "audio/x-wav"):
-        return audio
-
-    # Use ffmpeg to convert to WAV
-    with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as f_in:
+    with tempfile.NamedTemporaryFile(suffix=input_suffix, delete=False) as f_in:
         f_in.write(audio)
         in_path = f_in.name
 
-    out_path = in_path.replace(".webm", ".wav")
+    out_path = in_path + ".out.wav"
 
     try:
         subprocess.run(
@@ -75,10 +74,18 @@ def _convert_to_wav(audio: bytes, content_type: str | None) -> bytes:
         with open(out_path, "rb") as f_out:
             return f_out.read()
     finally:
-        import os
         os.unlink(in_path)
         if os.path.exists(out_path):
             os.unlink(out_path)
+
+
+def _convert_to_wav(audio: bytes, content_type: str | None) -> bytes:
+    """Convert audio to WAV format using ffmpeg if needed."""
+    # If already WAV, return as-is
+    if content_type in ("audio/wav", "audio/x-wav"):
+        return audio
+
+    return _bytes_to_wav_via_ffmpeg(audio, ".webm")
 
 
 def cohere_transcribe(audio: bytes, content_type: str | None) -> str:
@@ -229,6 +236,32 @@ def cohere_text_to_speech(
     return audio_bytes, "audio/wav"
 
 
+def load_voice_reference_wav(voice_id: str) -> bytes:
+    """
+    WAV bytes for Mistral voice cloning.
+    Looks for server/voice_refs/{voice_id}.wav, then .mp3 (MP3 is transcoded to WAV).
+    """
+    vid = (voice_id or "").strip().lower()
+    if not vid or not re.match(r"^[a-z0-9_-]+$", vid):
+        raise ValueError("Invalid voice_id")
+    path: Path | None = None
+    for ext in (".wav", ".mp3"):
+        p = VOICE_REFS_DIR / f"{vid}{ext}"
+        if p.is_file():
+            path = p
+            break
+    if path is None:
+        raise ValueError(
+            f"Voice reference missing: {vid}.wav or {vid}.mp3 under server/voice_refs/"
+        )
+    data = path.read_bytes()
+    if len(data) < 100:
+        raise ValueError(f"Voice reference file too small or empty: {path.name}")
+    if path.suffix.lower() == ".mp3":
+        data = _bytes_to_wav_via_ffmpeg(data, ".mp3")
+    return data
+
+
 def _stub_silence_wav(duration_frames: int = 8000) -> bytes:
     """Tiny valid WAV for fallback."""
     buf = io.BytesIO()
@@ -245,14 +278,16 @@ def run_voice_pipeline(
     audio: bytes,
     content_type: str | None,
     direction: Direction,
+    voice_id: str = "drake",
 ) -> tuple[bytes, str]:
     """
-    Full pipeline: transcribe → style transfer → TTS with voice cloning.
+    Full pipeline: transcribe (user upload) → style transfer → TTS.
+    Mistral ref_audio comes from voice_refs/{voice_id}.wav or .mp3 (avatar clone), not the mic upload.
     """
     if direction not in ("oxford-to-toronto", "toronto-to-oxford"):
         raise ValueError(f"Invalid direction: {direction}")
 
-    # Convert audio to WAV for both transcription and voice cloning
+    # User audio → WAV for transcription only
     if content_type not in ("audio/wav", "audio/x-wav"):
         audio_wav = _convert_to_wav(audio, content_type)
     else:
@@ -264,5 +299,5 @@ def run_voice_pipeline(
 
     styled = cohere_translate_style(raw_text, direction)
 
-    # Use converted WAV audio as reference for voice cloning
-    return cohere_text_to_speech(styled, direction, ref_audio=audio_wav)
+    ref_clone = load_voice_reference_wav(voice_id)
+    return cohere_text_to_speech(styled, direction, ref_audio=ref_clone)

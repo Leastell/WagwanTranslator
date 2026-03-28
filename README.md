@@ -66,8 +66,9 @@ Open **`http://localhost:5173`**. Vite proxies **`/api/*`** → **`http://127.0.
 | Location | Purpose |
 |----------|--------|
 | `server/cohere_pipeline.py` | **`cohere_transcribe`**, **`cohere_translate_style`**, **`cohere_text_to_speech`**, **`run_voice_pipeline`** |
-| `server/main.py` | **`POST /translate/voice`** — form fields **`audio`**, **`direction`**; response **raw audio** (`Content-Type` from TTS) |
-| `app/src/lib/api.js` | `translateVoice(blob, direction)` → `Blob` |
+| `server/main.py` | **`POST /translate/voice`** — form fields **`audio`**, **`direction`**, **`voice_id`** (default `drake`) |
+| `server/voice_refs/` | **`{voice_id}.wav`** or **`.mp3`** — Mistral clone ref (MP3 is converted server-side; not the mic upload) |
+| `app/src/lib/api.js` | `translateVoice(blob, direction, filename, voiceId)` → `Blob` |
 | `app/src/lib/useAudioRecorder.js` | Tap record / stop |
 | `app/src/App.jsx` | Direction chips + `<audio controls>` |
 

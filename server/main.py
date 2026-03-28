@@ -33,11 +33,13 @@ def health():
 async def translate_voice(
     audio: UploadFile = File(...),
     direction: str = Form(...),
+    voice_id: str = Form("drake"),
 ):
     """
     Multipart form:
-      - audio: recorded blob from the browser
+      - audio: recorded blob from the browser (transcription only)
       - direction: "oxford-to-toronto" | "toronto-to-oxford"
+      - voice_id: avatar id; Mistral uses server/voice_refs/{voice_id}.wav or .mp3 for cloning
 
     Response: raw audio bytes (Content-Type from TTS layer, e.g. audio/wav).
     """
@@ -56,7 +58,12 @@ async def translate_voice(
         raise HTTPException(status_code=400, detail="Empty audio file")
 
     try:
-        out_bytes, mime = run_voice_pipeline(data, audio.content_type, direction)
+        out_bytes, mime = run_voice_pipeline(
+            data,
+            audio.content_type,
+            direction,
+            voice_id=voice_id.strip().lower() or "drake",
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 

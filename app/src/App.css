@@ -1,8 +1,215 @@
-.app {
-  max-width: 600px;
+/* --- 3-column shell (Neocities energy) --- */
+.page-shell {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.75rem;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 0 1rem 2rem;
+  padding: 0 0.5rem 1.5rem;
+}
+
+.sidebar {
+  flex: 0 0 148px;
+  width: 148px;
+  min-width: 0;
+}
+
+.sidebar-frame {
+  background: #000080;
+  border: 4px ridge #c0c0c0;
+  padding: 0.5rem;
+  box-shadow: 4px 4px 0 #000;
+}
+
+.sidebar--toronto .sidebar-frame {
+  background: linear-gradient(180deg, #003300, #001a00);
+  border-color: #00ff00;
+}
+
+.sidebar--oxford .sidebar-frame {
+  background: linear-gradient(180deg, #1a0a2e, #0d0520);
+  border-color: #daa520;
+}
+
+.sidebar-heading {
+  margin: 0 0 0.35rem;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  text-align: center;
+  text-transform: uppercase;
+  color: #ffff00;
+  text-shadow:
+    1px 1px 0 #ff00ff,
+    2px 2px 0 #000;
+  font-family: 'Comic Sans MS', 'Comic Neue', cursive, sans-serif;
+}
+
+.sidebar-heading__star {
+  color: #ff6600;
+}
+
+.sidebar-blurb {
+  margin: 0 0 0.5rem;
+  font-size: 0.62rem;
+  line-height: 1.25;
+  color: #00ffff;
+  text-align: center;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.voice-card {
+  background: #000;
+  border: 3px outset #c0c0c0;
+  padding: 0.4rem;
+  text-align: center;
+}
+
+.voice-thumb {
+  width: 100%;
+  aspect-ratio: 1;
+  margin: 0 auto 0.35rem;
+  border: 2px inset #808080;
+  background: #222;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+}
+
+.voice-thumb--placeholder {
+  background: repeating-linear-gradient(
+    45deg,
+    #333,
+    #333 4px,
+    #444 4px,
+    #444 8px
+  );
+}
+
+.voice-thumb--photo {
+  display: block;
+  object-fit: cover;
+  margin-bottom: 0.35rem;
+  border: 2px inset #808080;
+}
+
+.voice-thumb__glyph {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #666;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.voice-thumb__hint {
+  font-size: 0.55rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.voice-card--selected {
+  border-color: #00ff00;
+  box-shadow: 0 0 8px #00ff00;
+}
+
+.voice-name {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 1px 1px 0 #000;
+  font-family: 'Comic Sans MS', 'Comic Neue', cursive, sans-serif;
+}
+
+.voice-pick-btn {
+  width: 100%;
+  padding: 0.25rem 0.15rem;
+  font-size: 0.55rem;
+  font-weight: bold;
+  font-family: 'Comic Sans MS', 'Comic Neue', cursive, sans-serif;
+  border: 3px outset #c0c0c0;
+  background: linear-gradient(180deg, #884400, #552200);
+  color: #ffcc88;
+  cursor: pointer;
+}
+
+.voice-pick-btn:hover {
+  background: linear-gradient(180deg, #aa5500, #663300);
+  color: #fff;
+}
+
+.voice-pick-btn:active {
+  border-style: inset;
+}
+
+.voice-pick-btn--on {
+  background: linear-gradient(180deg, #00aa00, #006600);
+  color: #fff;
+  border-color: #00ff00;
+}
+
+.voice-pick-btn--on:hover {
+  background: linear-gradient(180deg, #00cc00, #008800);
+}
+
+.voice-empty {
+  min-height: 120px;
+  border: 3px dashed #555;
+  background: repeating-linear-gradient(
+    0deg,
+    #0a0a12,
+    #0a0a12 2px,
+    #12121c 2px,
+    #12121c 4px
+  );
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+}
+
+.voice-empty__line1 {
+  margin: 0;
+  font-size: 0.7rem;
+  color: #666;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.voice-empty__line2 {
+  margin: 0.25rem 0 0;
+  font-size: 0.6rem;
+  color: #884400;
+  font-family: 'Comic Sans MS', 'Comic Neue', cursive, sans-serif;
+}
+
+.app {
+  flex: 1;
+  min-width: 0;
+  max-width: 600px;
+  margin: 0;
+  padding: 0 0.35rem 2rem;
   padding-bottom: max(2rem, env(safe-area-inset-bottom));
+}
+
+@media (max-width: 820px) {
+  .page-shell {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .sidebar {
+    flex: 1 1 140px;
+    max-width: 200px;
+  }
+
+  .app {
+    flex: 1 1 100%;
+    order: -1;
+    max-width: 600px;
+  }
 }
 
 /* Marquee banner */
@@ -332,4 +539,47 @@
   margin-bottom: 0.5rem;
   filter: drop-shadow(0 0 8px #FFD700);
   animation: pulse 3s ease-in-out infinite;
+}
+
+/* Keyframes used above (marquee, header, etc.) */
+@keyframes marquee {
+  0% {
+    transform: translateX(100vw);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 0.92;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes rainbow {
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    filter: hue-rotate(360deg);
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
 }
