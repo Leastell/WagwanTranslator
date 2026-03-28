@@ -1,0 +1,160 @@
+.app {
+  max-width: 28rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 2rem;
+  padding-bottom: max(2rem, env(safe-area-inset-bottom));
+}
+
+.header {
+  margin-bottom: 1rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: #9b9ba8;
+  line-height: 1.35;
+}
+
+.direction {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.chip {
+  flex: 1;
+  min-width: 8rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.65rem;
+  border: 1px solid #2e2e38;
+  background: #18181e;
+  color: #c8c8d0;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.chip.active {
+  border-color: #5b8def;
+  color: #e8e8f0;
+  background: #1c2436;
+}
+
+.mic-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.mic {
+  width: 5.5rem;
+  height: 5.5rem;
+  border-radius: 50%;
+  border: 3px solid #3a3a46;
+  background: linear-gradient(160deg, #25252e, #1a1a20);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+}
+
+.mic:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.mic.recording {
+  border-color: #e85d5d;
+  box-shadow: 0 0 0 4px rgba(232, 93, 93, 0.25);
+}
+
+.mic-icon {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.mic-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #8c8c9a;
+}
+
+.error {
+  color: #f09090;
+  font-size: 0.85rem;
+  margin: 0 0 0.75rem;
+}
+
+.panel {
+  background: #18181e;
+  border: 1px solid #2a2a32;
+  border-radius: 0.75rem;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.translation-panel {
+  border-style: dashed;
+  border-color: #3d3d4a;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.panel h2 {
+  margin: 0;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7a7a88;
+  font-weight: 600;
+}
+
+.translation-panel h2 {
+  margin-bottom: 0.5rem;
+}
+
+.linkish {
+  border: none;
+  background: none;
+  color: #7eb0ff;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.25rem 0.35rem;
+  touch-action: manipulation;
+}
+
+.transcript,
+.translation {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.45;
+  min-height: 2.5rem;
+  word-break: break-word;
+}
+
+.interim {
+  color: #a0a0b0;
+}
+
+.placeholder {
+  color: #5c5c6a;
+}
