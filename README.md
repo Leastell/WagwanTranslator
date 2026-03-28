@@ -34,7 +34,7 @@ _(Exact output depends on how you implement rules, a lexicon, or a model.)_
 
 **Step-by-step “what do I do now” and file map:** see [`DEVELOPMENT.md`](DEVELOPMENT.md).
 
-Flow today: **record audio in the browser** → **POST multipart file to FastAPI** → JSON `{ "translation": "..." }` shown in the UI. **No browser transcription** — implement **English → Toronto-style text** in **`server/cohere_translate.py`** (Cohere stub included).
+Flow today: **record audio** → **`POST /translate/voice`** with **`direction`** (`oxford-to-toronto` or `toronto-to-oxford`) → backend runs **transcribe → style → TTS** (stubs in **`server/cohere_pipeline.py`**) → **audio bytes** returned and **played** in the UI. **Oxford** = standard English.
 
 ### One-time setup
 
@@ -65,19 +65,19 @@ Open **`http://localhost:5173`**. Vite proxies **`/api/*`** → **`http://127.0.
 
 | Location | Purpose |
 |----------|--------|
-| `server/cohere_translate.py` | **`translate_en_audio_to_toronto`** — plug in Cohere (bytes + `Content-Type` → `str`) |
-| `server/main.py` | HTTP route `POST /translate/en-to-toronto`, field name **`audio`** |
-| `app/src/lib/api.js` | `fetch` + `FormData`; optional **`VITE_API_ROOT`** for direct API URL |
-| `app/src/lib/useAudioRecorder.js` | Tap record / stop, build Blob |
-| `app/src/App.jsx` | UI wiring |
+| `server/cohere_pipeline.py` | **`cohere_transcribe`**, **`cohere_translate_style`**, **`cohere_text_to_speech`**, **`run_voice_pipeline`** |
+| `server/main.py` | **`POST /translate/voice`** — form fields **`audio`**, **`direction`**; response **raw audio** (`Content-Type` from TTS) |
+| `app/src/lib/api.js` | `translateVoice(blob, direction)` → `Blob` |
+| `app/src/lib/useAudioRecorder.js` | Tap record / stop |
+| `app/src/App.jsx` | Direction chips + `<audio controls>` |
 
-### Android emulator (same machine as dev server)
+### Phone or Android emulator
 
-The dev server binds **`0.0.0.0:5173`**. With the default proxy, the phone only talks to port **5173**; keep **8000** running on the host.
+**`adb reverse tcp:5173 tcp:5173`** forwards the device’s **`localhost:5173`** to **port 5173 on your computer** (so “localhost” on the phone hits your Vite server). With the default **`/api` proxy**, you only need **5173** reversed—not 8000—unless you set **`VITE_API_ROOT`** to a URL on the device’s own `localhost`.
 
-1. Start API + `npm run dev` as above.
-2. `adb reverse tcp:5173 tcp:5173`
-3. Emulator **Chrome** → `http://localhost:5173` — grant mic.
+- **Emulator:** start API + `npm run dev`, then `adb reverse tcp:5173 tcp:5173`, open **`http://localhost:5173`** in Chrome, allow mic.
+- **Physical phone, fastest:** same Wi‑Fi as your laptop → in the phone browser open **`http://<your-laptop-LAN-IP>:5173`** (firewall must allow 5173).  
+- **Physical phone + USB:** enable USB debugging, `adb reverse tcp:5173 tcp:5173`, then **`http://localhost:5173`** on the phone.
 
 ### Production-ish build
 

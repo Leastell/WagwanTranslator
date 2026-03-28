@@ -1,46 +1,46 @@
 /**
- * POST recorded audio to the Python backend. Returns plaintext translation JSON.
+ * Voice translate: POST audio + direction → audio response (play in browser).
  *
- * Dev: Vite proxies /api → backend (see vite.config.js).
- * Prod / custom: set VITE_API_ROOT=http://your-host:8000 (no trailing slash).
+ * Dev: Vite proxies /api → backend (vite.config.js).
+ * Prod: VITE_API_ROOT=http://your-host:8000 (no trailing slash).
  */
 
-function translateUrl() {
+/** @typedef {'oxford-to-toronto' | 'toronto-to-oxford'} VoiceDirection */
+
+function voiceUrl() {
   const root = (import.meta.env.VITE_API_ROOT || '').replace(/\/$/, '')
-  if (root) return `${root}/translate/en-to-toronto`
-  return '/api/translate/en-to-toronto'
+  if (root) return `${root}/translate/voice`
+  return '/api/translate/voice'
 }
 
 /**
- * @param {Blob} audioBlob — e.g. from MediaRecorder
- * @param {string} [filename] — optional filename hint for the server
- * @returns {Promise<{ translation: string }>}
+ * @param {Blob} audioBlob
+ * @param {VoiceDirection} direction
+ * @param {string} [filename]
+ * @returns {Promise<Blob>}
  */
-export async function translateEnglishAudioToToronto(audioBlob, filename = 'recording.webm') {
+export async function translateVoice(audioBlob, direction, filename = 'recording.webm') {
   const form = new FormData()
   form.append('audio', audioBlob, filename)
+  form.append('direction', direction)
 
-  const res = await fetch(translateUrl(), {
+  const res = await fetch(voiceUrl(), {
     method: 'POST',
     body: form,
   })
 
-  const text = await res.text()
-  let json
-  try {
-    json = text ? JSON.parse(text) : {}
-  } catch {
-    throw new Error(`Bad JSON from server (${res.status}): ${text.slice(0, 200)}`)
-  }
-
   if (!res.ok) {
-    const detail = json.detail ?? json.message ?? text
-    throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail))
+    const text = await res.text()
+    let detail = text
+    try {
+      const j = JSON.parse(text)
+      detail = j.detail ?? j.message ?? text
+      if (typeof detail !== 'string') detail = JSON.stringify(detail)
+    } catch {
+      /* use raw text */
+    }
+    throw new Error(detail || `Request failed (${res.status})`)
   }
 
-  if (typeof json.translation !== 'string') {
-    throw new Error('Server response missing string "translation"')
-  }
-
-  return json
+  return res.blob()
 }

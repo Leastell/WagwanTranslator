@@ -23,12 +23,6 @@
   line-height: 1.35;
 }
 
-.mode-pill {
-  margin: 0 0 1rem;
-  font-size: 0.8rem;
-  color: #9b9ba8;
-}
-
 .direction {
   display: flex;
   gap: 0.5rem;
@@ -133,9 +127,27 @@
   margin-bottom: 0.75rem;
 }
 
-.translation-panel {
+.translation-panel,
+.output-panel {
   border-style: dashed;
   border-color: #3d3d4a;
+}
+
+.output-panel .panel-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0;
+}
+
+.panel-icon {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.audio-out {
+  width: 100%;
+  margin-top: 0.25rem;
 }
 
 .panel-head {
@@ -156,6 +168,10 @@
 }
 
 .translation-panel h2 {
+  margin-bottom: 0.5rem;
+}
+
+.output-panel .panel-head {
   margin-bottom: 0.5rem;
 }
 
