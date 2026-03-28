@@ -25,30 +25,49 @@ COHERE_API_KEY = os.environ.get("COHERE_API_KEY", "")
 MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY", "")
 
 
+def _convert_to_wav(audio: bytes, content_type: str | None) -> bytes:
+    """Convert audio to WAV format using ffmpeg if needed."""
+    import subprocess
+    import tempfile
+
+    # If already WAV, return as-is
+    if content_type in ("audio/wav", "audio/x-wav"):
+        return audio
+
+    # Use ffmpeg to convert to WAV
+    with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as f_in:
+        f_in.write(audio)
+        in_path = f_in.name
+
+    out_path = in_path.replace(".webm", ".wav")
+
+    try:
+        subprocess.run(
+            ["ffmpeg", "-y", "-i", in_path, "-ar", "16000", "-ac", "1", out_path],
+            capture_output=True,
+            check=True,
+        )
+        with open(out_path, "rb") as f_out:
+            return f_out.read()
+    finally:
+        import os
+        os.unlink(in_path)
+        if os.path.exists(out_path):
+            os.unlink(out_path)
+
+
 def cohere_transcribe(audio: bytes, content_type: str | None) -> str:
-    """Transcribe audio using Cohere speech-to-text API."""
+    """Transcribe audio using Cohere speech-to-text API. Expects WAV format."""
     if not audio:
         return ""
 
     if not COHERE_API_KEY:
         raise ValueError("COHERE_API_KEY environment variable not set")
 
-    # Determine file extension from content type
-    ext_map = {
-        "audio/wav": "wav",
-        "audio/x-wav": "wav",
-        "audio/webm": "webm",
-        "audio/ogg": "ogg",
-        "audio/mpeg": "mp3",
-        "audio/mp3": "mp3",
-    }
-    ext = ext_map.get(content_type, "wav")
-    filename = f"audio.{ext}"
-
     response = httpx.post(
         "https://api.cohere.com/v2/audio/transcriptions",
         headers={"Authorization": f"Bearer {COHERE_API_KEY}"},
-        files={"file": (filename, audio, content_type or "audio/wav")},
+        files={"file": ("audio.wav", audio, "audio/wav")},
         data={"model": "cohere-transcribe-03-2026", "language": "en"},
         timeout=60.0,
     )
@@ -136,9 +155,14 @@ Text to translate: {text}"""
     return result["message"]["content"][0]["text"]
 
 
-def cohere_text_to_speech(text: str, direction: Direction) -> tuple[bytes, str]:
+def cohere_text_to_speech(
+    text: str,
+    direction: Direction,
+    ref_audio: bytes | None = None,
+) -> tuple[bytes, str]:
     """
     Convert text to speech using Mistral Voxtral TTS API.
+    Optionally uses ref_audio for voice cloning.
     Returns (audio_bytes, mime_type).
     """
     if not text.strip():
@@ -149,17 +173,23 @@ def cohere_text_to_speech(text: str, direction: Direction) -> tuple[bytes, str]:
 
     _ = direction  # Could use different voices per direction in future
 
+    payload = {
+        "model": "voxtral-mini-tts-2603",
+        "input": text,
+        "response_format": "wav",
+    }
+
+    # Use reference audio for voice cloning if provided
+    if ref_audio:
+        payload["ref_audio"] = base64.b64encode(ref_audio).decode("utf-8")
+
     response = httpx.post(
         "https://api.mistral.ai/v1/audio/speech",
         headers={
             "Authorization": f"Bearer {MISTRAL_API_KEY}",
             "Content-Type": "application/json",
         },
-        json={
-            "model": "voxtral-mini-tts-2603",
-            "input": text,
-            "response_format": "wav",
-        },
+        json=payload,
         timeout=120.0,
     )
     response.raise_for_status()
@@ -189,14 +219,22 @@ def run_voice_pipeline(
     direction: Direction,
 ) -> tuple[bytes, str]:
     """
-    Full pipeline: transcribe → style transfer → TTS.
+    Full pipeline: transcribe → style transfer → TTS with voice cloning.
     """
     if direction not in ("oxford-to-toronto", "toronto-to-oxford"):
         raise ValueError(f"Invalid direction: {direction}")
 
-    raw_text = cohere_transcribe(audio, content_type)
+    # Convert audio to WAV for both transcription and voice cloning
+    if content_type not in ("audio/wav", "audio/x-wav"):
+        audio_wav = _convert_to_wav(audio, content_type)
+    else:
+        audio_wav = audio
+
+    raw_text = cohere_transcribe(audio_wav, "audio/wav")
     if not raw_text.strip():
         raise ValueError("Could not transcribe audio - no speech detected")
 
     styled = cohere_translate_style(raw_text, direction)
-    return cohere_text_to_speech(styled, direction)
+
+    # Use converted WAV audio as reference for voice cloning
+    return cohere_text_to_speech(styled, direction, ref_audio=audio_wav)
